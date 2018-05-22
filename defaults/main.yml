@@ -1,0 +1,14 @@
+---
+
+###
+### Sane defaults
+###
+
+aws_vpc_peering_default_region: eu-central-1
+aws_vpc_peering_default_profile: playground
+
+###
+### The peering array
+###
+
+aws_vpc_peering: []
