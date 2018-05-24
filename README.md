@@ -35,7 +35,8 @@ Instead of using somebody's sane defaults, you can also fully customize your pee
 
 ```yml
 aws_vpc_peering:
-  - reqfilter:
+  - name: mypeering
+    reqfilter:
       "tag:Name": filter
     region: eu-central-1
     accfilter:

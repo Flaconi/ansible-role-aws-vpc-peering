@@ -20,9 +20,9 @@
 - name: "Create peering {{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }} "
   ec2_vpc_peer:
     tags:
-      Name: "{{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }}"
+      Name: "{{ peering.name | default(aws_vpc_peering_requester_name + '-' + aws_vpc_peering_accepter_name) }}"
     aws_access_key: "{{ lookup('ENV', 'AWS_ACCESS_KEY') | default(omit) }}"
-    aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit)  }}"
+    aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit) }}"
     security_token: "{{ lookup('ENV', 'AWS_SECURITY_TOKEN') | default(omit) }}"
     profile: "{{ aws_vpc_peering_aws_profile | default(omit) }}"
     vpc_id: "{{ aws_vpc_peering_requester_id }}"
@@ -45,10 +45,10 @@
 - name: "Accept peering {{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }} "
   ec2_vpc_peer:
     tags:
-      Name: "{{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }}"
+      Name: "{{ peering.name | default(aws_vpc_peering_requester_name + '-' + aws_vpc_peering_accepter_name) }}"
       Managed_by: ansible-role-vpc-peering
     aws_access_key: "{{ lookup('ENV', 'AWS_ACCESS_KEY') | default(omit) }}"
-    aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit)  }}"
+    aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit) }}"
     security_token: "{{ lookup('ENV', 'AWS_SECURITY_TOKEN') | default(omit) }}"
     profile: "{{ aws_vpc_peering_aws_profile | default(omit) }}"
     peering_id: "{{ vpc_peering.peering_id }}"
