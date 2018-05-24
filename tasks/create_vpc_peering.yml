@@ -54,3 +54,4 @@
     region: "{{ peering.accregion | default(aws_vpc_peering_default_region) }}"
     state: accept
   register: vpc_peering
+  when: not ansible_check_mode
