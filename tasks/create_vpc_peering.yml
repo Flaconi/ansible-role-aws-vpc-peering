@@ -37,7 +37,6 @@
 ###
 - name: sleep for 1 second to create the peering
   wait_for: timeout=1
-  delegate_to: localhost
 
 ###
 ### Accept peering
