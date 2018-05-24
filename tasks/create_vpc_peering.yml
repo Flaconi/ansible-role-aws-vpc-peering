@@ -1,0 +1,58 @@
+---
+
+###
+### Gather facts about existing VPC´s
+###
+
+# gather_facts_requester.yml returns:
+# aws_vpc_peering_requester_id
+# aws_vpc_peering_requester_name
+- include_tasks: gather_facts_requester.yml
+
+# gather_facts_accepter.yml returns:
+# aws_vpc_peering_accepter_id
+# aws_vpc_peering_accepter_name
+- include_tasks: gather_facts_accepter.yml
+
+###
+### Create peering
+###
+- name: "Create peering {{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }} "
+  ec2_vpc_peer:
+    tags:
+      Name: "{{ peering.name | default(aws_vpc_peering_requester_name + '-' + aws_vpc_peering_accepter_name) }}"
+      Managed_by: ansible-role-vpc-peering
+    aws_access_key: "{{ lookup('ENV', 'AWS_ACCESS_KEY') | default(omit) }}"
+    aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit) }}"
+    security_token: "{{ lookup('ENV', 'AWS_SECURITY_TOKEN') | default(omit) }}"
+    profile: "{{ aws_vpc_peering_aws_profile | default(omit) }}"
+    vpc_id: "{{ aws_vpc_peering_requester_id }}"
+    region: "{{ peering.region | default(aws_vpc_peering_default_region) }}"
+    peer_vpc_id: "{{ aws_vpc_peering_accepter_id }}"
+    peer_region: "{{ peering.accregion | default(aws_vpc_peering_default_region) }}"
+    state: present
+  register: vpc_peering
+
+###
+### Wait 1 second to create the peering in different regions
+###
+- name: sleep for 1 second to create the peering
+  wait_for: timeout=1
+
+###
+### Accept peering
+###
+- name: "Accept peering {{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }} "
+  ec2_vpc_peer:
+    tags:
+      Name: "{{ peering.name | default(aws_vpc_peering_requester_name + '-' + aws_vpc_peering_accepter_name) }}"
+      Managed_by: ansible-role-vpc-peering
+    aws_access_key: "{{ lookup('ENV', 'AWS_ACCESS_KEY') | default(omit) }}"
+    aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit) }}"
+    security_token: "{{ lookup('ENV', 'AWS_SECURITY_TOKEN') | default(omit) }}"
+    profile: "{{ aws_vpc_peering_aws_profile | default(omit) }}"
+    peering_id: "{{ vpc_peering.peering_id }}"
+    region: "{{ peering.accregion | default(aws_vpc_peering_default_region) }}"
+    state: accept
+  register: vpc_peering
+  when: not ansible_check_mode
