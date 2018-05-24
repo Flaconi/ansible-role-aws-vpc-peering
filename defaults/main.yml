@@ -5,7 +5,7 @@
 ###
 
 aws_vpc_peering_default_region: eu-central-1
-aws_vpc_peering_default_profile: 
+aws_vpc_peering_aws_profile:
 
 ###
 ### The peering array
