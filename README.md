@@ -41,7 +41,7 @@ aws_vpc_peering:
         val: vpc-2
       - key: "tag:Env"
         val: production
-  - name:
+  - name: my-peering-2
     req_name: vpc-1
     acc_name: vpc-2
 ```
@@ -75,7 +75,7 @@ aws_vpc_peering:
       - key: department
         val: devops
 
-  - name:
+  - name: my-peering-2
     req_name: vpc-1
     acc_name: vpc-2
     region: eu-central-1
