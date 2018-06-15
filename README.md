@@ -33,14 +33,14 @@ aws_vpc_peering:
   - name: my-peering-1
     req_filter:
       - key: "tag:Name"
-	    val: vpc-1
+        val: vpc-1
       - key: "tag:Env"
-	    val: production
+        val: production
     acc_filter:
       - key: "tag:Name"
-	    val: vpc-2
+        val: vpc-2
       - key: "tag:Env"
-	    val: production
+        val: production
   - name:
     req_name: vpc-1
     acc_name: vpc-2
@@ -60,14 +60,14 @@ aws_vpc_peering:
   - name: my-peering-1
     req_filter:
       - key: "tag:Name"
-	    val: vpc-1
+        val: vpc-1
       - key: "tag:Env"
-	    val: production
+        val: production
     acc_filter:
       - key: "tag:Name"
-	    val: vpc-2
+        val: vpc-2
       - key: "tag:Env"
-	    val: production
+        val: production
     region: eu-central-1
     tags:
       - key: env
