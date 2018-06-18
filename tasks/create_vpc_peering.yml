@@ -1,36 +1,92 @@
 ---
 
 ###
+### Asserts
+###
+
+# Assert that vpc peering name is defined
+- name: ensure name is defined
+  assert:
+    that:
+      - peering.name is defined
+      - peering.name | length > 0
+    msg: "aws_vpc_peering[x].name is not defined, but required"
+
+- name: ensure aws_vpc_peering array container req_filter xor reg_name key
+  assert:
+    that:
+      - peering.req_filter is defined or peering.req_name is defined
+      - not (peering.req_filter is defined and peering.req_name is defined)
+    msg: "aws_vpc_peering[x].req_filter xor .req_name is not defined, but required to lookup vpc"
+
+- name: ensure aws_vpc_peering array container acc_filter xor acc_name key
+  assert:
+    that:
+      - peering.acc_filter is defined or peering.acc_name is defined
+      - not (peering.acc_filter is defined and peering.acc_name is defined)
+    msg: "aws_vpc_peering[x].acc_filter xor .acc_name is not defined, but required to lookup vpc"
+
+
+###
 ### Gather facts about existing VPC´s
 ###
 
 # gather_facts_requester.yml returns:
 # aws_vpc_peering_requester_id
 # aws_vpc_peering_requester_name
-- include_tasks: gather_facts_requester.yml
+- include_tasks: gather_facts_requester_by_filter.yml
+  when:
+    - peering.req_filter is defined
+
+- include_tasks: gather_facts_requester_by_name.yml
+  when:
+    - peering.req_name is defined
+
 
 # gather_facts_accepter.yml returns:
 # aws_vpc_peering_accepter_id
 # aws_vpc_peering_accepter_name
-- include_tasks: gather_facts_accepter.yml
+- include_tasks: gather_facts_accepter_by_filter.yml
+  when:
+    - peering.acc_filter is defined
+
+- include_tasks: gather_facts_accepter_by_name.yml
+  when:
+    - peering.acc_name is defined
+
+
+###
+### Set VPC peering tags
+###
+- name: set vpc peering tags
+  set_fact:
+    _aws_vpc_peering_tags: |
+      {{
+        peering.tags | default([]) + [{
+          'key': 'Name',
+          'val': peering.name
+        }]
+      }}
+
 
 ###
 ### Create peering
 ###
 - name: "Create peering {{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }} "
   ec2_vpc_peer:
-    tags:
-      Name: "{{ peering.name | default(aws_vpc_peering_requester_name + '-' + aws_vpc_peering_accepter_name) }}"
-      Managed_by: ansible-role-vpc-peering
+    # Fixed values
+    state: present
+    # Looked-up values
+    vpc_id: "{{ aws_vpc_peering_requester_id }}"
+    peer_vpc_id: "{{ aws_vpc_peering_accepter_id }}"
+    peer_region: "{{ peering.accregion | default(aws_vpc_peering_default_region) }}"
+    # Optional values
+    tags: "{{ _aws_vpc_peering_tags | get_attr('key', 'val') }}"
+    region: "{{ peering.region | default(aws_vpc_peering_default_region) }}"
     aws_access_key: "{{ lookup('ENV', 'AWS_ACCESS_KEY') | default(omit) }}"
     aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit) }}"
     security_token: "{{ lookup('ENV', 'AWS_SECURITY_TOKEN') | default(omit) }}"
     profile: "{{ aws_vpc_peering_profile | default(omit) }}"
-    vpc_id: "{{ aws_vpc_peering_requester_id }}"
-    region: "{{ peering.region | default(aws_vpc_peering_default_region) }}"
-    peer_vpc_id: "{{ aws_vpc_peering_accepter_id }}"
-    peer_region: "{{ peering.accregion | default(aws_vpc_peering_default_region) }}"
-    state: present
   register: vpc_peering
 
 ###
@@ -44,15 +100,16 @@
 ###
 - name: "Accept peering {{ aws_vpc_peering_requester_name }}-{{ aws_vpc_peering_accepter_name }} "
   ec2_vpc_peer:
-    tags:
-      Name: "{{ peering.name | default(aws_vpc_peering_requester_name + '-' + aws_vpc_peering_accepter_name) }}"
-      Managed_by: ansible-role-vpc-peering
+    # Fixed values
+    state: accept
+    # Looked-up values
+    peering_id: "{{ vpc_peering.peering_id }}"
+    # Optional values
+    tags: "{{ _aws_vpc_peering_tags | get_attr('key', 'val') }}"
+    region: "{{ peering.region | default(aws_vpc_peering_default_region) }}"
     aws_access_key: "{{ lookup('ENV', 'AWS_ACCESS_KEY') | default(omit) }}"
     aws_secret_key: "{{ lookup('ENV', 'AWS_SECRET_KEY') | default(omit) }}"
     security_token: "{{ lookup('ENV', 'AWS_SECURITY_TOKEN') | default(omit) }}"
     profile: "{{ aws_vpc_peering_profile | default(omit) }}"
-    peering_id: "{{ vpc_peering.peering_id }}"
-    region: "{{ peering.accregion | default(aws_vpc_peering_default_region) }}"
-    state: accept
   register: vpc_peering
   when: not ansible_check_mode
